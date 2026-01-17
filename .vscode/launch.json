@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:JsonLint}",
+            "name": "Debug jsonlint",
+            "target": "jsonlint",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug jsonlint"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:JsonLint}",
+            "name": "Release jsonlint",
+            "target": "jsonlint",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release jsonlint"
+        }
+    ]
+}

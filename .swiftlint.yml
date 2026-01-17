@@ -1,0 +1,61 @@
+disabled_rules:
+  - trailing_comma
+  - todo
+  - line_length
+
+opt_in_rules:
+  - empty_count
+  - explicit_init
+  - closure_spacing
+  - operator_usage_whitespace
+  - redundant_nil_coalescing
+  - empty_string
+
+included:
+  - Sources
+  - Tests
+
+excluded:
+  - .build
+  - .swiftpm
+  - Tests/LinuxMain.swift
+
+line_length:
+  warning: 120
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+function_body_length:
+  warning: 60
+  error: 100
+
+file_length:
+  warning: 500
+  error: 1000
+  ignore_comment_only_lines: true
+
+type_body_length:
+  warning: 300
+  error: 500
+
+identifier_name:
+  min_length:
+    warning: 2
+  max_length:
+    warning: 50
+    error: 60
+  excluded:
+    - id
+    - i
+    - j
+    - k
+    - x
+    - y
+    - z
+
+cyclomatic_complexity:
+  warning: 15
+  error: 25
+
+reporter: "xcode"

@@ -1,0 +1,53 @@
+# Automatically label PRs based on changed files
+
+'area: lexer':
+  - Sources/JsonLexer/**/*
+  - Tests/JsonLexerTests/**/*
+
+'area: parser':
+  - Sources/JsonParser/**/*
+  - Tests/JsonParserTests/**/*
+
+'area: rules':
+  - Sources/JsonRules/**/*
+  - Tests/JsonRulesTests/**/*
+
+'area: validator':
+  - Sources/JsonValidator/**/*
+  - Tests/JsonValidatorTests/**/*
+
+'area: fixer':
+  - Sources/JsonFixer/**/*
+  - Tests/JsonFixerTests/**/*
+
+'area: config':
+  - Sources/JsonConfig/**/*
+  - Tests/JsonConfigTests/**/*
+
+'area: core':
+  - Sources/JsonLintCore/**/*
+  - Tests/JsonLintCoreTests/**/*
+
+'area: cli':
+  - Sources/jsonlint-cli/**/*
+  - Tests/CLITests/**/*
+
+'documentation':
+  - '**/*.md'
+  - 'docs/**/*'
+
+'tests':
+  - Tests/**/*
+  - '**/*Tests.swift'
+
+'dependencies':
+  - Package.swift
+  - Package.resolved
+
+'ci/cd':
+  - '.github/**/*'
+
+'config':
+  - '.swiftlint.yml'
+  - '.gitignore'
+  - '**/*.toml'

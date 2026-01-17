@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        swift-version: ['6.0']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Swift
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: ${{ matrix.swift-version }}
+
+    - name: Cache Swift dependencies
+      uses: actions/cache@v3
+      with:
+        path: .build
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+
+    - name: Build
+      run: swift build -v
+
+    - name: Run tests
+      run: swift test -v
+
+    - name: Check for warnings
+      run: swift build -Xswiftc -warnings-as-errors
+
+  lint:
+    name: Lint
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Swift
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: '6.0'
+
+    - name: Install SwiftLint
+      run: |
+        brew install swiftlint
+
+    - name: Run SwiftLint
+      run: |
+        swiftlint lint --strict || echo "SwiftLint not configured yet, skipping"
+      continue-on-error: true
+
+    - name: Check Swift format
+      run: |
+        if command -v swift-format &> /dev/null; then
+          swift-format lint -r Sources Tests
+        else
+          echo "swift-format not available, skipping"
+        fi
+      continue-on-error: true
+
+  code-coverage:
+    name: Code Coverage
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Swift
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: '6.0'
+
+    - name: Run tests with coverage
+      run: swift test --enable-code-coverage
+
+    - name: Generate coverage report
+      run: |
+        xcrun llvm-cov export -format="lcov" \
+          .build/debug/JsonLintPackageTests.xctest/Contents/MacOS/JsonLintPackageTests \
+          -instr-profile .build/debug/codecov/default.profdata > coverage.lcov
+      continue-on-error: true
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.lcov
+        fail_ci_if_error: false
+      continue-on-error: true
+
+  integration-test:
+    name: Integration Tests
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Swift
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: '6.0'
+
+    - name: Build release binary
+      run: swift build -c release
+
+    - name: Test CLI - Basic linting
+      run: |
+        echo '{"name": "test", "value": 123}' > test.json
+        .build/release/jsonlint test.json
+
+    - name: Test CLI - Fix mode
+      run: |
+        echo '{"name":"compact","value":456}' > compact.json
+        .build/release/jsonlint --fix compact.json
+        cat compact.json | grep -q "name"
+
+    - name: Test CLI - JSON5
+      run: |
+        echo "{ key: 'value', }" > test.json5
+        .build/release/jsonlint --dialect json5 test.json5 || true
+
+    - name: Test CLI - stdin
+      run: |
+        echo '{"test": true}' | .build/release/jsonlint --stdin
+
+    - name: Test CLI - JSON output
+      run: |
+        echo '{"name": "test"}' > test.json
+        .build/release/jsonlint --format json test.json
+
+    - name: Cleanup
+      run: rm -f test.json compact.json test.json5

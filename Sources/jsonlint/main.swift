@@ -1,0 +1,3 @@
+import JsonLintCLI
+
+JsonLintCLI.main()

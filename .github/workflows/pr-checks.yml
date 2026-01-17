@@ -1,0 +1,133 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-pr:
+    name: Validate PR
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check PR title
+      uses: amannn/action-semantic-pull-request@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        types: |
+          feat
+          fix
+          docs
+          style
+          refactor
+          perf
+          test
+          chore
+        requireScope: false
+      continue-on-error: true
+
+  size-label:
+    name: Add Size Label
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Calculate PR size
+      id: size
+      run: |
+        additions=$(git diff --numstat origin/main...HEAD | awk '{s+=$1} END {print s}')
+        deletions=$(git diff --numstat origin/main...HEAD | awk '{s+=$2} END {print s}')
+        total=$((additions + deletions))
+
+        if [ $total -lt 10 ]; then
+          echo "label=size/XS" >> $GITHUB_OUTPUT
+        elif [ $total -lt 50 ]; then
+          echo "label=size/S" >> $GITHUB_OUTPUT
+        elif [ $total -lt 200 ]; then
+          echo "label=size/M" >> $GITHUB_OUTPUT
+        elif [ $total -lt 500 ]; then
+          echo "label=size/L" >> $GITHUB_OUTPUT
+        else
+          echo "label=size/XL" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Add size label
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: ['${{ steps.size.outputs.label }}']
+          })
+
+  auto-label:
+    name: Auto Label
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Label based on changed files
+      uses: actions/labeler@v5
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        configuration-path: .github/labeler.yml
+
+  require-approval:
+    name: Check Approvals
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+    - name: Check for required approvals
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: reviews } = await github.rest.pulls.listReviews({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number,
+          });
+
+          const approvals = reviews.filter(review => review.state === 'APPROVED').length;
+
+          if (approvals === 0) {
+            core.warning('This PR has no approvals yet');
+          } else {
+            core.info(`This PR has ${approvals} approval(s)`);
+          }
+
+  conflict-check:
+    name: Check for Conflicts
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check for merge conflicts
+      run: |
+        git fetch origin main
+        if git merge-tree $(git merge-base HEAD origin/main) HEAD origin/main | grep -q '<<<<<<<'; then
+          echo "::error::This PR has merge conflicts with main branch"
+          exit 1
+        else
+          echo "✓ No merge conflicts detected"
+        fi
