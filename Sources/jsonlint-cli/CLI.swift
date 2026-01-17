@@ -1,11 +1,11 @@
-import Foundation
 import ArgumentParser
+import Foundation
+import JsonConfig
+import JsonFixer
 import JsonLexer
 import JsonParser
 import JsonRules
 import JsonValidator
-import JsonFixer
-import JsonConfig
 
 /// Command-line options (separate from ParsableCommand for testability)
 public struct CLIOptions {
@@ -124,9 +124,10 @@ public struct CLI {
             let totalErrors = result.violations.filter { $0.severity == .error }.count
             let totalWarnings = result.violations.filter { $0.severity == .warning }.count
 
-            formatter.printSummary(filesChecked: 1, totalViolations: result.violations.count,
-                                  totalErrors: totalErrors, totalWarnings: totalWarnings,
-                                  totalFixed: result.fixed ? 1 : 0)
+            formatter.printSummary(
+                filesChecked: 1, totalViolations: result.violations.count,
+                totalErrors: totalErrors, totalWarnings: totalWarnings,
+                totalFixed: result.fixed ? 1 : 0)
 
             let exitCode: Int32 = result.violations.count == 0 && result.error == nil ? 0 : 1
             throw ExitCode(exitCode)
@@ -184,8 +185,9 @@ public struct CLI {
         }
 
         // Print summary at the end
-        formatter.printSummary(filesChecked: filesChecked, totalViolations: totalViolations,
-                              totalErrors: totalErrors, totalWarnings: totalWarnings, totalFixed: totalFixed)
+        formatter.printSummary(
+            filesChecked: filesChecked, totalViolations: totalViolations,
+            totalErrors: totalErrors, totalWarnings: totalWarnings, totalFixed: totalFixed)
 
         let exitCode: Int32 = totalViolations == 0 ? 0 : 1
         throw ExitCode(exitCode)
@@ -196,7 +198,9 @@ public struct CLI {
 
         if let configPath = options.config {
             fileConfig = (try? ConfigLoader().load(from: configPath)) ?? Configuration.default
-        } else if let discovered = ConfigLoader().discover(startingFrom: FileManager.default.currentDirectoryPath) {
+        } else if let discovered = ConfigLoader().discover(
+            startingFrom: FileManager.default.currentDirectoryPath)
+        {
             fileConfig = discovered
         }
 
@@ -265,7 +269,9 @@ public struct CLI {
         return filePaths
     }
 
-    private func processFile(_ file: InputFile, config: Configuration, fix: Bool) throws -> FileResult {
+    private func processFile(_ file: InputFile, config: Configuration, fix: Bool) throws
+        -> FileResult
+    {
         let lexer = Lexer(source: file.content, dialect: config.general.dialectEnum)
         let tokens = try lexer.tokenize()
 

@@ -82,15 +82,69 @@ jobs:
         git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION"
         git push origin "v$NEW_VERSION"
 
+    - name: Extract changelog for this version
+      id: changelog
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.version }}"
+
+        # Extract the section for this version from CHANGELOG.md
+        if [ -f CHANGELOG.md ]; then
+          # Get content between this version header and the next version header
+          CHANGELOG=$(awk "/## \[$NEW_VERSION\]/,/## \[/{if (/## \[/ && !seen) {seen=1; next}; if (/## \[/ && seen) exit; if (seen) print}" CHANGELOG.md)
+
+          # If no specific changelog, use a default message
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="See CHANGELOG.md for details."
+          fi
+        else
+          CHANGELOG="Release version $NEW_VERSION"
+        fi
+
+        # Save to file for multiline handling
+        echo "$CHANGELOG" > /tmp/changelog.txt
+        echo "changelog_file=/tmp/changelog.txt" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.version }}"
+
+        # Create the release with changelog
+        gh release create "v$NEW_VERSION" \
+          --title "Release v$NEW_VERSION" \
+          --notes-file "${{ steps.changelog.outputs.changelog_file }}" \
+          --draft=false \
+          --prerelease=false
+
+    - name: Trigger release workflow
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Wait a moment for the tag to be fully registered
+        sleep 2
+
+        # The release.yml workflow should be triggered by the tag
+        # Check if it's running
+        echo "Checking for running release workflow..."
+        gh run list --workflow=release.yml --limit 5
+
     - name: Create release summary
       run: |
-        echo "### 🚀 Version Bumped!" >> $GITHUB_STEP_SUMMARY
+        NEW_VERSION="${{ steps.new_version.outputs.version }}"
+
+        echo "### 🚀 Version Released!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "- **Previous version:** ${{ steps.current_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **New version:** ${{ steps.new_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **New version:** $NEW_VERSION" >> $GITHUB_STEP_SUMMARY
         echo "- **Bump type:** ${{ github.event.inputs.version_bump }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Tag \`v${{ steps.new_version.outputs.version }}\` has been created and pushed." >> $GITHUB_STEP_SUMMARY
-        echo "The release workflow will now build binaries automatically." >> $GITHUB_STEP_SUMMARY
+        echo "✅ Tag \`v$NEW_VERSION\` has been created and pushed." >> $GITHUB_STEP_SUMMARY
+        echo "✅ GitHub Release has been created." >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🔨 The release workflow is building binaries for all platforms..." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "👉 [View Release](https://github.com/${{ github.repository }}/releases/tag/v$NEW_VERSION)" >> $GITHUB_STEP_SUMMARY
         echo "👉 [View Release Workflow](https://github.com/${{ github.repository }}/actions/workflows/release.yml)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "⏳ Binaries will be attached to the release in ~5-10 minutes." >> $GITHUB_STEP_SUMMARY
