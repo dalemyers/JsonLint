@@ -144,6 +144,8 @@ jobs:
     name: Build macOS ARM64
     needs: bump-and-release
     runs-on: macos-14
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code
@@ -183,6 +185,8 @@ jobs:
     name: Build macOS x86_64
     needs: bump-and-release
     runs-on: macos-13
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code
@@ -222,6 +226,8 @@ jobs:
     name: Build macOS Universal Binary
     needs: [bump-and-release, build-macos-arm64, build-macos-x86_64]
     runs-on: macos-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Download ARM64 binary
@@ -261,6 +267,8 @@ jobs:
     name: Build Linux x86_64
     needs: bump-and-release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     container:
       image: swift:6.0
 
@@ -301,6 +309,8 @@ jobs:
     name: Build Windows x86_64
     needs: bump-and-release
     runs-on: windows-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code
