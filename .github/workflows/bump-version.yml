@@ -184,7 +184,7 @@ jobs:
   build-macos-x86_64:
     name: Build macOS x86_64
     needs: bump-and-release
-    runs-on: macos-13
+    runs-on: macos-15-intel
     permissions:
       contents: write
 
