@@ -46,7 +46,7 @@ public struct JsonLintCLI: ParsableCommand {
     public static let configuration = CommandConfiguration(
         commandName: "jsonlint",
         abstract: "A JSON linter and formatter",
-        version: "1.1.7"
+        version: "1.1.8"
     )
 
     public init() {}
