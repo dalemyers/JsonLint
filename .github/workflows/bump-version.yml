@@ -154,7 +154,7 @@ jobs:
         ref: ${{ needs.bump-and-release.outputs.tag_name }}
 
     - name: Setup Swift
-      uses: swift-actions/setup-swift@v2
+      uses: swift-actions/setup-swift@v3
       with:
         swift-version: '6.0'
 
@@ -195,7 +195,7 @@ jobs:
         ref: ${{ needs.bump-and-release.outputs.tag_name }}
 
     - name: Setup Swift
-      uses: swift-actions/setup-swift@v2
+      uses: swift-actions/setup-swift@v3
       with:
         swift-version: '6.0'
 
